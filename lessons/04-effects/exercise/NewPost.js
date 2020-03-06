@@ -10,13 +10,24 @@ import RecentPostsDropdown from 'app/RecentPostsDropdown'
 const MAX_MESSAGE_LENGTH = 200
 
 export default function NewPost({ takeFocus, date, onSuccess, showAvatar }) {
+  const postKey = makeNewPostKey(date);
+  const textAreaRef = useRef(null)
   const [{ auth }] = useAppState()
-  const [message, setMessage] = useState('Ran around the lake.')
+  const [message, setMessage] = useState(getLocalStorageValue(postKey) || "")
   const messageTooLong = message.length > MAX_MESSAGE_LENGTH
 
   function handleMessageChange(event) {
     setMessage(event.target.value)
   }
+
+  useEffect(() => {
+    takeFocus && textAreaRef.current.focus()
+    textAreaRef.current.selectionStart = message.length
+  }, [takeFocus])
+
+  useEffect(() => {
+    setLocalStorage(postKey, message)
+  }, [postKey, message])
 
   return (
     <div className={'NewPost' + (messageTooLong ? ' NewPost_error' : '')}>
@@ -27,6 +38,7 @@ export default function NewPost({ takeFocus, date, onSuccess, showAvatar }) {
           placeholder="Tell us about your workout!"
           value={message}
           onChange={handleMessageChange}
+          ref={textAreaRef}
         />
         <div className="NewPost_char_count">
           {message.length}/{MAX_MESSAGE_LENGTH}
