@@ -8,7 +8,7 @@ export default function LoggedOut() {
   return (
     <div className="LoggedOut">
       <About />
-      <Tabs>
+      <Tabs defaultIndex={1}>
         <TabList>
           <Tab>Login</Tab>
           <Tab>Sign Up</Tab>
