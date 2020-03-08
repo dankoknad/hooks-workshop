@@ -10,7 +10,20 @@ import User from "app/User"
 import NotFound from "app/NotFound"
 
 export default function LoggedIn() {
-  const user = null
+  const [{ auth, user, fetchingUser }, dispatch] = useAppState()
+
+  useEffect(() => {
+    if (!user) {
+      dispatch({ type: 'FETCH_USER' })
+      fetchUser(auth.uid).then(user => {
+        dispatch({ type: 'FETCH_USER_SUCCEEDED', payload: user })
+      })
+    }
+  }, [user, auth.uid, dispatch])
+
+  if (fetchingUser) {
+    return <div>Fetching user..</div>
+  }
 
   return user ? (
     <Fragment>
@@ -42,7 +55,7 @@ export default function LoggedIn() {
         </Router>
       </div>
     </Fragment>
-  ) : <div>No user! Go fix it :D</div>
+  ) : <div>We got some error here. Please try again.</div>
 }
 
 const hasValidDateParam = ({ params }) => {
