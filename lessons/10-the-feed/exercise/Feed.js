@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
 import FeedPost from "app/FeedPost"
 import { loadFeedPosts, subscribeToNewFeedPosts } from "app/utils"
 // import FeedFinal from './Feed.final'
@@ -6,42 +6,35 @@ import { loadFeedPosts, subscribeToNewFeedPosts } from "app/utils"
 export default Feed
 
 function Feed() {
-  const [posts, setPosts] = useState([])
-  const [upcommingPosts, setUpcommingPosts] = useState([])
-  let isCanceled = useRef();
-
-  const getPosts = async e => {
-    const createdBefore = posts.length
-      ? posts[posts.length - 1].createdAt
-      : Date.now();
-
-    const newPosts = await loadFeedPosts(createdBefore, 2);
-    isCanceled.current || setPosts(posts.concat(newPosts));
-  }
-
-  const loadUpcommingPosts = () => {
-    setPosts(upcommingPosts.concat(posts));
-    setUpcommingPosts([]);
-  }
+  const [posts, setPosts] = useState([]);
+  const [time, setTime] = useState(Date.now());
+  const [limit, setLimit] = useState(3);
+  const [newPosts, setNewPosts] = useState([])
 
   useEffect(() => {
-    getPosts()
-    return () => { isCanceled.current = true }
-  }, [])
+    return subscribeToNewFeedPosts(time, setNewPosts)
+  }, [time])
 
   useEffect(() => {
-    const createdAfter = posts.length
-      ? posts[0].createdAt
-      : Date.now();
+    let isCurrent = true
 
-    return subscribeToNewFeedPosts(createdAfter, setUpcommingPosts)
-  }, [])
+    loadFeedPosts(time, limit).then(posts => {
+      if (isCurrent) setPosts(posts);
+    })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [time, limit])
 
   return (
     <div className="Feed">
-      {upcommingPosts.length > 0 && <div className="Feed_button_wrapper">
-        <button className="Feed_new_posts_button icon_button" onClick={loadUpcommingPosts}>
-          View {upcommingPosts.length} New Posts
+      {newPosts.length > 0 && <div className="Feed_button_wrapper">
+        <button className="Feed_new_posts_button icon_button" onClick={() => {
+          setTime(Date.now());
+          setLimit(limit + newPosts.length)
+        }}>
+          View {newPosts.length} New Posts
         </button>
       </div>}
 
@@ -50,7 +43,12 @@ function Feed() {
       ))}
 
       <div className="Feed_button_wrapper">
-        <button className="Feed_new_posts_button icon_button" onClick={getPosts}>View More</button>
+        <button
+          className="Feed_new_posts_button icon_button"
+          onClick={() => { setLimit(limit + 3) }}
+        >
+          View More
+        </button>
       </div>
     </div>
   )
