@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect, useRef } from "react"
 import FeedPost from "app/FeedPost"
 import { loadFeedPosts, subscribeToNewFeedPosts } from "app/utils"
 // import FeedFinal from './Feed.final'
@@ -6,18 +6,51 @@ import { loadFeedPosts, subscribeToNewFeedPosts } from "app/utils"
 export default Feed
 
 function Feed() {
+  const [posts, setPosts] = useState([])
+  const [upcommingPosts, setUpcommingPosts] = useState([])
+  let isCanceled = useRef();
+
+  const getPosts = async e => {
+    const createdBefore = posts.length
+      ? posts[posts.length - 1].createdAt
+      : Date.now();
+
+    const newPosts = await loadFeedPosts(createdBefore, 2);
+    isCanceled.current || setPosts(posts.concat(newPosts));
+  }
+
+  const loadUpcommingPosts = () => {
+    setPosts(upcommingPosts.concat(posts));
+    setUpcommingPosts([]);
+  }
+
+  useEffect(() => {
+    getPosts()
+    return () => { isCanceled.current = true }
+  }, [])
+
+  useEffect(() => {
+    const createdAfter = posts.length
+      ? posts[0].createdAt
+      : Date.now();
+
+    return subscribeToNewFeedPosts(createdAfter, setUpcommingPosts)
+  }, [])
+
   return (
     <div className="Feed">
-      <div className="Feed_button_wrapper">
-        <button className="Feed_new_posts_button icon_button">
-          View 3 New Posts
+      {upcommingPosts.length > 0 && <div className="Feed_button_wrapper">
+        <button className="Feed_new_posts_button icon_button" onClick={loadUpcommingPosts}>
+          View {upcommingPosts.length} New Posts
         </button>
-      </div>
+      </div>}
 
-      <FeedPost post={fakePost} />
+      {posts.map(post => (
+        <FeedPost key={post.id} post={post} />
+      ))}
 
       <div className="Feed_button_wrapper">
-        <button className="Feed_new_posts_button icon_button">View More</button>
+        <button className="Feed_new_posts_button icon_button" onClick={getPosts}>View More</button>
       </div>
     </div>
   )
