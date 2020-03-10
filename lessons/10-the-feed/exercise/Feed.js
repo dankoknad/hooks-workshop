@@ -5,6 +5,8 @@ import { loadFeedPosts, subscribeToNewFeedPosts } from "app/utils"
 // export default FeedFinal
 export default Feed
 
+let feedState = null
+
 const initialState = {
   fetching: false,
   posts: [],
@@ -33,7 +35,7 @@ const postsReducer = (state, action) => {
 function Feed() {
   const [{ posts, newPosts, time, limit }, dispatch] = useReducer(
     postsReducer,
-    initialState
+    feedState || initialState
   )
 
   useEffect(() => {
@@ -55,6 +57,10 @@ function Feed() {
       isCurrent = false
     }
   }, [time, limit])
+
+  useEffect(() => {
+    feedState = { posts, newPosts, time, limit }
+  })
 
   return (
     <div className="Feed">
